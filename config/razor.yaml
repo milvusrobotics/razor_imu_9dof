@@ -32,3 +32,5 @@ imu_yaw_calibration: 0.0
 gyro_average_offset_x: 0.0
 gyro_average_offset_y: 0.0
 gyro_average_offset_z: 0.0
+calibrate_gyro: True
+gyro_calibration_time: 10
