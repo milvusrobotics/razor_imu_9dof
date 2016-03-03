@@ -197,6 +197,7 @@
 #define OUTPUT__MODE_SENSORS_RAW 3 // Outputs raw (uncalibrated) sensor values for all 9 axes
 #define OUTPUT__MODE_SENSORS_BOTH 4 // Outputs calibrated AND raw sensor values for all 9 axes
 #define OUTPUT__MODE_ANGLES_AG_SENSORS 5 // Outputs yaw/pitch/roll in degrees + linear accel + rot. vel
+#define OUTPUT__MODE_CALIBRATE_GYRO 6 // Auto calibration for gyro
 // Output format definitions (do not change)
 #define OUTPUT__FORMAT_TEXT 0 // Outputs data as text
 #define OUTPUT__FORMAT_BINARY 1 // Outputs data as binary float
@@ -367,6 +368,10 @@ boolean reset_calibration_session_flag = true;
 int num_accel_errors = 0;
 int num_magn_errors = 0;
 int num_gyro_errors = 0;
+
+unsigned long gyro_start_time = 0;
+unsigned long gyro_calibration_time = 5;
+int last_output_mode = 0; 
 
 void read_sensors() {
   Read_Gyro(); // Read gyroscope
@@ -608,6 +613,29 @@ void loop()
             Serial.println(num_gyro_errors);
           }
         }
+        else if(output_param == 'g') // Gyro calibration
+        {
+          int inChar = 0;
+          String inString = "";
+          while(Serial.available() > 0){
+            inChar = Serial.read(); 
+            if(isDigit(inChar))
+              inString += (char)inChar;
+          }
+          if(inChar == '\r')
+          {
+            gyro_calibration_time = (inString.toInt())*1000;
+          }
+            // Reset gyro calibration variables
+          gyro_num_samples = 0;  // Reset gyro calibration averaging
+          gyro_average[0] = gyro_average[1] = gyro_average[2] = 0.0f;
+          
+          last_output_mode = output_mode;  
+          output_mode = OUTPUT__MODE_CALIBRATE_GYRO;
+          
+          gyro_start_time = millis();
+          
+        }
       }
       else if (command == 'p') // Set _p_rint calibration values
       {
@@ -813,6 +841,24 @@ void loop()
       Euler_angles();
       
       if (output_stream_on || output_single_on) output_angles();
+    }
+    else if (output_mode == OUTPUT__MODE_CALIBRATE_GYRO)  // Auto-calibrate gyro
+    {
+      if(millis() - gyro_start_time > gyro_calibration_time){
+        GYRO_AVERAGE_OFFSET_X = gyro_average[0] / (float) gyro_num_samples;
+        GYRO_AVERAGE_OFFSET_Y = gyro_average[1] / (float) gyro_num_samples;
+        GYRO_AVERAGE_OFFSET_Z = gyro_average[2] / (float) gyro_num_samples;
+        
+        output_mode = last_output_mode;
+        
+        Serial.println("OK");
+      }else{
+       // Average gyro values
+      for (int i = 0; i < 3; i++)
+        gyro_average[i] += gyro[i];
+      gyro_num_samples++;
+      
+      }
     }
     else if (output_mode == OUTPUT__MODE_ANGLES_AG_SENSORS)  // Output angles + accel + rot. vel
     {

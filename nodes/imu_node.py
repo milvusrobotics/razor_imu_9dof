@@ -127,6 +127,8 @@ imu_yaw_calibration = rospy.get_param('~imu_yaw_calibration', 0.0)
 gyro_average_offset_x = rospy.get_param('~gyro_average_offset_x', 0.0)
 gyro_average_offset_y = rospy.get_param('~gyro_average_offset_y', 0.0)
 gyro_average_offset_z = rospy.get_param('~gyro_average_offset_z', 0.0)
+calibrate_gyro = rospy.get_param('~calibrate_gyro', True)
+gyro_calibration_time = rospy.get_param('~gyro_calibration_time', 5)
 
 #rospy.loginfo("%f %f %f %f %f %f", accel_x_min, accel_x_max, accel_y_min, accel_y_max, accel_z_min, accel_z_max)
 #rospy.loginfo("%f %f %f %f %f %f", magn_x_min, magn_x_max, magn_y_min, magn_y_max, magn_z_min, magn_z_max)
@@ -196,6 +198,26 @@ else:
 ser.write('#cgx' + str(gyro_average_offset_x) + chr(13))
 ser.write('#cgy' + str(gyro_average_offset_y) + chr(13))
 ser.write('#cgz' + str(gyro_average_offset_z) + chr(13))
+
+if calibrate_gyro == False:
+    ser.write('#cgx' + str(gyro_average_offset_x) + chr(13))
+    ser.write('#cgy' + str(gyro_average_offset_y) + chr(13))
+    ser.write('#cgz' + str(gyro_average_offset_z) + chr(13))
+else:
+    ser.write('#og20' + chr(13))
+    ser.flushInput()
+    zero_status = False
+    rospy.loginfo("Calibrating gyro for " + str(gyro_calibration_time) + " seconds. Please do NOT move the platform...")
+    for counter in range (0,gyro_calibration_time + 5):
+        line = ser.readline()
+        if line.find("OK") != -1:
+            rospy.loginfo("Zero Rating OK...")
+            zero_status = True
+            break
+        rospy.sleep(1)
+        
+if zero_status == False:
+    rospy.logerr("Zero Rating FAILED...")
 
 #print calibration values for verification by user
 ser.flushInput()
