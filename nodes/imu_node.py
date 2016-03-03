@@ -195,29 +195,26 @@ else:
     ser.write('#ctzY' + str(magn_ellipsoid_transform[2][1]) + chr(13))
     ser.write('#ctzZ' + str(magn_ellipsoid_transform[2][2]) + chr(13))
 
-ser.write('#cgx' + str(gyro_average_offset_x) + chr(13))
-ser.write('#cgy' + str(gyro_average_offset_y) + chr(13))
-ser.write('#cgz' + str(gyro_average_offset_z) + chr(13))
-
 if calibrate_gyro == False:
     ser.write('#cgx' + str(gyro_average_offset_x) + chr(13))
     ser.write('#cgy' + str(gyro_average_offset_y) + chr(13))
     ser.write('#cgz' + str(gyro_average_offset_z) + chr(13))
 else:
-    ser.write('#og20' + chr(13))
+    rospy.loginfo("Calibrating gyro for " + str(gyro_calibration_time) + " seconds. Please do not move the IMU...")
+    ser.write('#og' + str(gyro_calibration_time) + chr(13))
     ser.flushInput()
     zero_status = False
-    rospy.loginfo("Calibrating gyro for " + str(gyro_calibration_time) + " seconds. Please do NOT move the platform...")
+    
     for counter in range (0,gyro_calibration_time + 5):
         line = ser.readline()
         if line.find("OK") != -1:
-            rospy.loginfo("Zero Rating OK...")
+            rospy.loginfo("Gyro calibration is OK...")
             zero_status = True
             break
         rospy.sleep(1)
         
 if zero_status == False:
-    rospy.logerr("Zero Rating FAILED...")
+    rospy.logerr("Gyro calibration is FAILED...")
 
 #print calibration values for verification by user
 ser.flushInput()
