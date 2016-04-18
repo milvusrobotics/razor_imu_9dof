@@ -82,9 +82,9 @@ imuMsg.orientation_covariance = [
 # nonlinearity spec: 0.2% of full scale => 8 degrees/sec = 0.14 rad/sec
 # Choosing the larger (0.14) as std dev, variance = 0.14^2 ~= 0.02
 imuMsg.angular_velocity_covariance = [
-0.02, 0 , 0,
-0 , 0.02, 0,
-0 , 0 , 0.02
+0.002, 0 , 0,
+0 , 0.002, 0,
+0 , 0 , 0.002
 ]
 
 # linear acceleration covariance estimation:
